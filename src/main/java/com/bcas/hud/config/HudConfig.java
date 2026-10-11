@@ -16,11 +16,13 @@ public class HudConfig {
 
     public boolean enabled = true;
     public boolean showTopStats = true;
-    public boolean showServerBadge = true;
+    public boolean showServerBadge = false;
     public boolean showLeftPanel = true;
     public boolean showBottomStatus = true;
     public boolean hideVanillaStatusBars = true;
     public boolean leftPanelCollapsed = false;
+    public boolean sidebarTopCorner = false;
+    public String sidebarSize = "NORMAL"; // "COMPACT", "NORMAL", "LARGE"
 
     public String serverName = "BCAS SMP";
     public String rankText = "EXPLORER";

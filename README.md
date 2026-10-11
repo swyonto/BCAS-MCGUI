@@ -52,7 +52,7 @@ A modern, minimal, and responsive client-side HUD mod for Minecraft Java Edition
 - **Dependencies**: Fabric API 1.21.11, Java 21
 
 ### Install Mod Jar
-1. Download or compile `bcas-hud-1.0.0.jar`.
+1. Download or compile `bcas-hud-1.3.jar`.
 2. Place it into your `.minecraft/mods` folder (or your TLauncher profile mods folder, e.g., `.minecraft/versions/<profile>/mods`).
 3. Ensure **Fabric API** is also in your mods folder.
 4. Launch Minecraft with your Fabric profile!

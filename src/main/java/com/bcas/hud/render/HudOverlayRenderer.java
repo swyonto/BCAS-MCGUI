@@ -2,6 +2,8 @@ package com.bcas.hud.render;
 
 import com.bcas.hud.config.HudConfig;
 import com.bcas.hud.data.ManaManager;
+import com.bcas.hud.gui.BcasMapScreen;
+import com.bcas.hud.gui.BcasPlayerScreen;
 import com.bcas.hud.gui.BcasSettingsScreen;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
@@ -12,20 +14,38 @@ import net.minecraft.text.Text;
 
 public class HudOverlayRenderer {
 
-    // Colors
-    private static final int BG_COLOR = 0xAA0F172A; // Modern dark slate
-    private static final int BORDER_COLOR = 0x33475569;
-    private static final int HOVER_COLOR = 0x5538BDF8;
-    private static final int TEXT_WHITE = 0xFFF8FAFC;
-    private static final int TEXT_MUTED = 0xFF94A3B8;
+    // Colors: Translucent grayish neutral dark slate with low opacity
+    public static final int BG_COLOR = 0x4518181B; // Translucent neutral dark gray (less opacity)
+    public static final int BORDER_COLOR = 0x3352525B; // Neutral zinc-gray border
+    public static final int HOVER_COLOR = 0x5538BDF8;
+    public static final int TEXT_WHITE = 0xFFF8FAFC;
+    public static final int TEXT_MUTED = 0xFFA1A1AA;
 
-    // Panel bounds for mouse clicks
-    public static final int LEFT_PANEL_X = 8;
-    public static final int LEFT_PANEL_Y = 55;
-    public static final int LEFT_PANEL_W = 22;
-    public static final int LEFT_PANEL_COLLAPSED_W = 16;
-    public static final int LEFT_PANEL_H = 96;
-    public static final int LEFT_PANEL_COLLAPSED_H = 26;
+    // Panel bounds helpers for dynamic scaling and positioning
+    public static int getLeftPanelX() {
+        return 8;
+    }
+
+    public static int getLeftPanelY() {
+        HudConfig config = HudConfig.get();
+        return config.sidebarTopCorner ? 8 : 55;
+    }
+
+    public static int getLeftPanelW(boolean collapsed) {
+        HudConfig config = HudConfig.get();
+        int base = collapsed ? 16 : 22;
+        if ("COMPACT".equals(config.sidebarSize)) return base - 2;
+        if ("LARGE".equals(config.sidebarSize)) return base + 4;
+        return base;
+    }
+
+    public static int getLeftPanelH(boolean collapsed) {
+        HudConfig config = HudConfig.get();
+        int base = collapsed ? 24 : 76; // 3 actions (Mod Info removed)
+        if ("COMPACT".equals(config.sidebarSize)) return base - 6;
+        if ("LARGE".equals(config.sidebarSize)) return base + 8;
+        return base;
+    }
 
     public static void render(DrawContext context, float tickDelta) {
         HudConfig config = HudConfig.get();
@@ -52,80 +72,73 @@ public class HudOverlayRenderer {
     }
 
     private static void renderTopRightStats(DrawContext context, TextRenderer tr, MinecraftClient client, int screenWidth) {
-        HudConfig config = HudConfig.get();
         ClientPlayerEntity player = client.player;
         if (player == null) return;
 
-        int pillW = 96;
-        int pillH = 17;
-        int startX = screenWidth - pillW - 8;
-        int y = 8;
-
-        // 1. FPS Pill
         int fps = client.getCurrentFps();
-        drawPill(context, startX, y, pillW, pillH);
-        IconRenderer.drawMonitor(context, startX + 5, y + 4, 0xFF38BDF8);
-        context.drawText(tr, String.valueOf(fps), startX + 22, y + 5, TEXT_WHITE, false);
-        y += pillH + 4;
 
-        // 2. Coordinates Pill
         int px = (int) Math.floor(player.getX());
         int py = (int) Math.floor(player.getY());
         int pz = (int) Math.floor(player.getZ());
         String coords = px + ", " + py + ", " + pz;
-        int coordPillW = Math.max(pillW, tr.getWidth(coords) + 26);
-        int coordX = screenWidth - coordPillW - 8;
-        drawPill(context, coordX, y, coordPillW, pillH);
-        IconRenderer.drawPin(context, coordX + 6, y + 3, 0xFFFACC15);
-        context.drawText(tr, coords, coordX + 22, y + 5, TEXT_WHITE, false);
-        y += pillH + 4;
 
-        // 3. Player Count Pill
         int onlineCount = 1;
         int maxPlayers = 24;
         if (client.getNetworkHandler() != null) {
             onlineCount = client.getNetworkHandler().getPlayerList().size();
         }
         String countStr = String.format("%02d/%02d", onlineCount, maxPlayers);
-        drawPill(context, startX, y, pillW, pillH);
-        IconRenderer.drawUsers(context, startX + 5, y + 4, 0xFF38BDF8);
-        context.drawText(tr, countStr, startX + 22, y + 5, TEXT_WHITE, false);
-        y += pillH + 4;
 
-        // 4. Ping Pill
         int ping = 0;
-        if (client.getNetworkHandler() != null && player != null) {
+        if (client.getNetworkHandler() != null) {
             PlayerListEntry entry = client.getNetworkHandler().getPlayerListEntry(player.getUuid());
             if (entry != null) {
                 ping = Math.max(0, entry.getLatency());
             }
         }
         String pingStr = ping + " ms";
-        drawPill(context, startX, y, pillW, pillH);
-        IconRenderer.drawWifi(context, startX + 5, y + 4, 0xFF4ADE80);
-        context.drawText(tr, pingStr, startX + 22, y + 5, TEXT_WHITE, false);
-        y += pillH + 6;
 
-        // 5. BCAS SMP Badge
-        if (config.showServerBadge) {
-            String badgeText = config.serverName;
-            int badgeW = tr.getWidth(badgeText) + 16;
-            int badgeX = screenWidth - badgeW - 8;
-            int badgeH = 16;
-            context.fill(badgeX, y, badgeX + badgeW, y + badgeH, 0x882A0812);
-            drawOutline(context, badgeX, y, badgeW, badgeH, 0xFFE11D48);
-            context.drawText(tr, badgeText, badgeX + 8, y + 4, 0xFFFB7185, false);
-        }
+        // One unified compact container (short, tight gap, lower opacity, no SMP tag)
+        int cardW = Math.max(90, tr.getWidth(coords) + 26);
+        int cardH = 58;
+        int cardX = screenWidth - cardW - 8;
+        int cardY = 8;
+
+        context.fill(cardX, cardY, cardX + cardW, cardY + cardH, BG_COLOR);
+        drawOutline(context, cardX, cardY, cardW, cardH, BORDER_COLOR);
+
+        int iconX = cardX + 6;
+        int textX = cardX + 22;
+
+        // 1. FPS
+        int r1Y = cardY + 4;
+        IconRenderer.drawMonitor(context, iconX, r1Y + 1, 0xFF38BDF8);
+        context.drawText(tr, String.valueOf(fps), textX, r1Y + 2, TEXT_WHITE, false);
+
+        // 2. Coordinates
+        int r2Y = cardY + 17;
+        IconRenderer.drawPin(context, iconX + 1, r2Y, 0xFFFACC15);
+        context.drawText(tr, coords, textX, r2Y + 2, TEXT_WHITE, false);
+
+        // 3. Online Players
+        int r3Y = cardY + 30;
+        IconRenderer.drawUsers(context, iconX, r3Y + 1, 0xFF38BDF8);
+        context.drawText(tr, countStr, textX, r3Y + 2, TEXT_WHITE, false);
+
+        // 4. Ping
+        int r4Y = cardY + 43;
+        IconRenderer.drawWifi(context, iconX, r4Y + 1, 0xFF4ADE80);
+        context.drawText(tr, pingStr, textX, r4Y + 2, TEXT_WHITE, false);
     }
 
     private static void renderLeftPanel(DrawContext context, MinecraftClient client) {
         HudConfig config = HudConfig.get();
         boolean collapsed = config.leftPanelCollapsed;
 
-        int x = LEFT_PANEL_X;
-        int y = LEFT_PANEL_Y;
-        int w = collapsed ? LEFT_PANEL_COLLAPSED_W : LEFT_PANEL_W;
-        int h = collapsed ? LEFT_PANEL_COLLAPSED_H : LEFT_PANEL_H;
+        int x = getLeftPanelX();
+        int y = getLeftPanelY();
+        int w = getLeftPanelW(collapsed);
+        int h = getLeftPanelH(collapsed);
 
         // Background panel
         context.fill(x, y, x + w, y + h, BG_COLOR);
@@ -137,13 +150,11 @@ public class HudOverlayRenderer {
 
         if (!collapsed) {
             // Action 1: Settings (Gear)
-            IconRenderer.drawGear(context, x + 6, y + 25, 0xFF94A3B8);
+            IconRenderer.drawGear(context, x + (w / 2) - 5, y + 25, 0xFF94A3B8);
             // Action 2: Players (Users)
-            IconRenderer.drawUsers(context, x + 5, y + 43, 0xFF94A3B8);
+            IconRenderer.drawUsers(context, x + (w / 2) - 6, y + 43, 0xFF94A3B8);
             // Action 3: Map
-            IconRenderer.drawMap(context, x + 6, y + 61, 0xFF94A3B8);
-            // Action 4: Mods
-            IconRenderer.drawMods(context, x + 6, y + 79, 0xFF94A3B8);
+            IconRenderer.drawMap(context, x + (w / 2) - 5, y + 61, 0xFF94A3B8);
         }
     }
 
@@ -151,9 +162,9 @@ public class HudOverlayRenderer {
         HudConfig config = HudConfig.get();
         boolean collapsed = config.leftPanelCollapsed;
 
-        int x = LEFT_PANEL_X;
-        int y = LEFT_PANEL_Y;
-        int w = collapsed ? LEFT_PANEL_COLLAPSED_W : LEFT_PANEL_W;
+        int x = getLeftPanelX();
+        int y = getLeftPanelY();
+        int w = getLeftPanelW(collapsed);
 
         MinecraftClient client = MinecraftClient.getInstance();
         TextRenderer tr = client.textRenderer;
@@ -172,13 +183,27 @@ public class HudOverlayRenderer {
                 context.drawTextWithShadow(tr, "Settings (O)", x + w + 6, y + 25, 0xFFFFFFFF);
             } else if (mouseY >= y + 39 && mouseY < y + 57) {
                 context.fill(x + 1, y + 39, x + w - 1, y + 57, HOVER_COLOR);
-                context.drawTextWithShadow(tr, "Online Players", x + w + 6, y + 43, 0xFFFFFFFF);
-            } else if (mouseY >= y + 57 && mouseY < y + 75) {
-                context.fill(x + 1, y + 57, x + w - 1, y + 75, HOVER_COLOR);
-                context.drawTextWithShadow(tr, "Map / Coords", x + w + 6, y + 61, 0xFFFFFFFF);
-            } else if (mouseY >= y + 75 && mouseY <= y + 95) {
-                context.fill(x + 1, y + 75, x + w - 1, y + 95, HOVER_COLOR);
-                context.drawTextWithShadow(tr, "Mod Info", x + w + 6, y + 79, 0xFFFFFFFF);
+                context.drawTextWithShadow(tr, "Players & Ranks", x + w + 6, y + 43, 0xFFFFFFFF);
+            } else if (mouseY >= y + 57 && mouseY <= y + 76) {
+                context.fill(x + 1, y + 57, x + w - 1, y + 76, HOVER_COLOR);
+                context.drawTextWithShadow(tr, "Live World Map", x + w + 6, y + 61, 0xFFFFFFFF);
+            }
+        }
+
+        // Rank Square Highlight
+        if (config.showBottomStatus && client.player != null) {
+            int screenWidth = context.getScaledWindowWidth();
+            int screenHeight = context.getScaledWindowHeight();
+            int barW = 68;
+            int rankBoxSize = 16;
+            int totalWidth = barW + 14 + barW + 12 + rankBoxSize;
+            int startX = (screenWidth - totalWidth) / 2;
+            int rankX = startX + barW + 14 + barW + 12;
+            int rankY = screenHeight - 49;
+
+            if (mouseX >= rankX && mouseX <= rankX + rankBoxSize && mouseY >= rankY && mouseY <= rankY + rankBoxSize) {
+                context.fill(rankX + 1, rankY + 1, rankX + rankBoxSize - 1, rankY + rankBoxSize - 1, HOVER_COLOR);
+                context.drawTextWithShadow(tr, "Rank: " + config.rankText, rankX - 10, rankY - 12, 0xFFFFFFFF);
             }
         }
     }
@@ -191,38 +216,36 @@ public class HudOverlayRenderer {
         float health = player.getHealth();
         float maxHealth = player.getMaxHealth();
 
-        ManaManager manaManager = ManaManager.getInstance();
-        float mana = manaManager.getCurrentMana();
-        float maxMana = manaManager.getMaxMana();
+        int food = player.getHungerManager().getFoodLevel();
+        int maxFood = 20;
 
-        // Position directly above hotbar
+        // Position directly above hotbar (178px centered over hotbar's 182px width)
         int barW = 68;
         int barH = 5;
-        int totalWidth = (barW * 2) + 110;
+        int rankBoxSize = 16;
+        int totalWidth = barW + 14 + barW + 12 + rankBoxSize; // 178px
         int startX = (screenWidth - totalWidth) / 2;
-        int y = screenHeight - 44;
+        int y = screenHeight - 49;
 
-        // Health Status
+        // 1. Health Status
         IconRenderer.drawHeart(context, startX, y, 0xFFEF4444);
         String healthStr = (int) Math.ceil(health) + "/" + (int) maxHealth;
         context.drawText(tr, healthStr, startX + 13, y + 1, TEXT_WHITE, false);
         drawSegmentedBar(context, startX, y + 10, barW, barH, health / maxHealth, 0xFFEF4444, 0xFF991B1B);
 
-        // Mana Status
-        int manaX = startX + barW + 16;
-        IconRenderer.drawDroplet(context, manaX, y, 0xFF06B6D4);
-        String manaStr = (int) Math.ceil(mana) + "/" + (int) maxMana;
-        context.drawText(tr, manaStr, manaX + 11, y + 1, TEXT_WHITE, false);
-        drawSegmentedBar(context, manaX, y + 10, barW, barH, mana / maxMana, 0xFF06B6D4, 0xFF0E7490);
+        // 2. Hunger Status (Water is hunger -> meat drumstick icon and hunger bar)
+        int hungerX = startX + barW + 14;
+        IconRenderer.drawHunger(context, hungerX, y, 0xFFF59E0B);
+        String hungerStr = food + "/" + maxFood;
+        context.drawText(tr, hungerStr, hungerX + 13, y + 1, TEXT_WHITE, false);
+        drawSegmentedBar(context, hungerX, y + 10, barW, barH, (float) food / (float) maxFood, 0xFFF59E0B, 0xFF92400E);
 
-        // Rank Badge
-        int rankX = manaX + barW + 14;
-        context.fill(rankX, y + 1, rankX + 1, y + 15, 0x6694A3B8);
-
-        // Star Icon + Rank Text
-        IconRenderer.drawStar(context, rankX + 7, y + 3, 0xFFFACC15);
-        String rank = config.rankText;
-        context.drawText(tr, rank, rankX + 20, y + 4, TEXT_WHITE, false);
+        // 3. Rank Badge (in a square container using icon)
+        int rankX = hungerX + barW + 12;
+        int rankY = y;
+        context.fill(rankX, rankY, rankX + rankBoxSize, rankY + rankBoxSize, BG_COLOR);
+        drawOutline(context, rankX, rankY, rankBoxSize, rankBoxSize, BORDER_COLOR);
+        IconRenderer.drawStar(context, rankX + 3, rankY + 3, 0xFFFACC15);
     }
 
     private static void drawSegmentedBar(DrawContext context, int x, int y, int width, int height, float fillFraction, int fillColor, int trackColor) {
@@ -269,10 +292,10 @@ public class HudOverlayRenderer {
         if (!config.enabled || !config.showLeftPanel) return false;
 
         boolean collapsed = config.leftPanelCollapsed;
-        int x = LEFT_PANEL_X;
-        int y = LEFT_PANEL_Y;
-        int w = collapsed ? LEFT_PANEL_COLLAPSED_W : LEFT_PANEL_W;
-        int h = collapsed ? LEFT_PANEL_COLLAPSED_H : LEFT_PANEL_H;
+        int x = getLeftPanelX();
+        int y = getLeftPanelY();
+        int w = getLeftPanelW(collapsed);
+        int h = getLeftPanelH(collapsed);
 
         // Generous clickable bounds
         if (mouseX >= x - 2 && mouseX <= x + w + 4 && mouseY >= y - 2 && mouseY <= y + h + 4) {
@@ -289,27 +312,35 @@ public class HudOverlayRenderer {
                     client.setScreen(new BcasSettingsScreen(client.currentScreen));
                     return true;
                 } else if (mouseY >= y + 39 && mouseY < y + 57) {
-                    if (client.player != null) {
-                        int count = client.getNetworkHandler() != null ? client.getNetworkHandler().getPlayerList().size() : 1;
-                        client.player.sendMessage(Text.literal("§b[BCAS SMP]§r Online players: §e" + count + "§r/§724"), false);
-                    }
+                    client.setScreen(new BcasPlayerScreen(client.currentScreen));
                     return true;
-                } else if (mouseY >= y + 57 && mouseY < y + 75) {
-                    if (client.player != null) {
-                        int px = (int) client.player.getX();
-                        int py = (int) client.player.getY();
-                        int pz = (int) client.player.getZ();
-                        client.player.sendMessage(Text.literal("§e[BCAS SMP]§r Your coordinates: §f" + px + ", " + py + ", " + pz), false);
-                    }
-                    return true;
-                } else if (mouseY >= y + 75 && mouseY <= y + 96) {
-                    if (client.player != null) {
-                        client.player.sendMessage(Text.literal("§d[BCAS SMP]§r HUD Mod v1.0.0 is active."), false);
-                    }
+                } else if (mouseY >= y + 57 && mouseY <= y + 76) {
+                    client.setScreen(new BcasMapScreen(client.currentScreen));
                     return true;
                 }
             }
         }
+
+        // Click Rank Square
+        if (config.showBottomStatus) {
+            MinecraftClient client = MinecraftClient.getInstance();
+            if (client.player != null && client.getWindow() != null) {
+                int screenWidth = client.getWindow().getScaledWidth();
+                int screenHeight = client.getWindow().getScaledHeight();
+                int barW = 68;
+                int rankBoxSize = 16;
+                int totalWidth = barW + 14 + barW + 12 + rankBoxSize;
+                int startX = (screenWidth - totalWidth) / 2;
+                int rankX = startX + barW + 14 + barW + 12;
+                int rankY = screenHeight - 49;
+
+                if (mouseX >= rankX && mouseX <= rankX + rankBoxSize && mouseY >= rankY && mouseY <= rankY + rankBoxSize) {
+                    client.player.sendMessage(Text.literal("§e[Rank]§r Current rank: §6" + config.rankText), false);
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 }

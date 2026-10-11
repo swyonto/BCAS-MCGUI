@@ -106,6 +106,24 @@ public class IconRenderer {
         context.fill(x + 2, y + 9, x + 5, y + 10, color);
     }
 
+    public static void drawHunger(DrawContext context, int x, int y, int meatColor) {
+        int boneColor = 0xFFE2E8F0;
+        // Meat bulb (top right angled drumstick)
+        context.fill(x + 5, y, x + 8, y + 1, meatColor);
+        context.fill(x + 4, y + 1, x + 9, y + 2, meatColor);
+        context.fill(x + 3, y + 2, x + 9, y + 4, meatColor);
+        context.fill(x + 2, y + 4, x + 8, y + 5, meatColor);
+        context.fill(x + 1, y + 5, x + 6, y + 6, meatColor);
+
+        // Bone shaft (bottom left)
+        context.fill(x + 2, y + 6, x + 4, y + 7, boneColor);
+        context.fill(x + 1, y + 7, x + 3, y + 8, boneColor);
+
+        // Bone knobs
+        context.fill(x, y + 8, x + 2, y + 10, boneColor);
+        context.fill(x + 2, y + 8, x + 4, y + 10, boneColor);
+    }
+
     public static void drawStar(DrawContext context, int x, int y, int color) {
         // 9x9 star
         context.fill(x + 4, y, x + 5, y + 9, color);

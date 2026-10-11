@@ -2,6 +2,8 @@ package com.bcas.hud;
 
 import com.bcas.hud.config.HudConfig;
 import com.bcas.hud.data.ManaManager;
+import com.bcas.hud.gui.BcasMapScreen;
+import com.bcas.hud.gui.BcasPlayerScreen;
 import com.bcas.hud.gui.BcasSettingsScreen;
 import com.bcas.hud.gui.BcasToolbarScreen;
 import com.bcas.hud.render.HudOverlayRenderer;
@@ -22,6 +24,8 @@ public class BcasHudClient implements ClientModInitializer {
     private static KeyBinding openSettingsKey;
     private static KeyBinding toggleToolbarKey;
     private static KeyBinding interactiveToolbarKey;
+    private static KeyBinding openMapKey;
+    private static KeyBinding openPlayersKey;
 
     @Override
     public void onInitializeClient() {
@@ -58,6 +62,22 @@ public class BcasHudClient implements ClientModInitializer {
                 "key.bcas-hud.interactive_toolbar",
                 InputUtil.Type.KEYSYM,
                 GLFW.GLFW_KEY_Z,
+                category
+        ));
+
+        // Key 5: Open Live World Map (M)
+        openMapKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.bcas-hud.map",
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_M,
+                category
+        ));
+
+        // Key 6: Open Players & Ranks (P)
+        openPlayersKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.bcas-hud.players",
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_P,
                 category
         ));
 
@@ -104,6 +124,22 @@ public class BcasHudClient implements ClientModInitializer {
                 if (client.currentScreen == null) {
                     client.setScreen(new BcasToolbarScreen());
                 } else if (client.currentScreen instanceof BcasToolbarScreen) {
+                    client.setScreen(null);
+                }
+            }
+
+            while (openMapKey.wasPressed()) {
+                if (client.currentScreen == null) {
+                    client.setScreen(new BcasMapScreen(null));
+                } else if (client.currentScreen instanceof BcasMapScreen) {
+                    client.setScreen(null);
+                }
+            }
+
+            while (openPlayersKey.wasPressed()) {
+                if (client.currentScreen == null) {
+                    client.setScreen(new BcasPlayerScreen(null));
+                } else if (client.currentScreen instanceof BcasPlayerScreen) {
                     client.setScreen(null);
                 }
             }
