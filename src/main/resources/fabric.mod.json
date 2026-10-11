@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "bcas-hud",
+  "version": "${version}",
+  "name": "BCAS SMP HUD",
+  "description": "Modern custom HUD for BCAS SMP.",
+  "authors": [
+    "BCAS SMP"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.bcas.hud.BcasHudClient"
+    ]
+  },
+  "mixins": [
+    "bcas-hud.client.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.17.0",
+    "minecraft": ">=1.21.11- <1.21.12-",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
