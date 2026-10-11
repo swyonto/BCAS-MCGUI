@@ -34,17 +34,13 @@ public class HudOverlayRenderer {
     public static int getLeftPanelW(boolean collapsed) {
         HudConfig config = HudConfig.get();
         int base = collapsed ? 16 : 22;
-        if ("COMPACT".equals(config.sidebarSize)) return base - 2;
-        if ("LARGE".equals(config.sidebarSize)) return base + 4;
-        return base;
+        return Math.max(14, (int) Math.round(base * config.layoutScale));
     }
 
     public static int getLeftPanelH(boolean collapsed) {
         HudConfig config = HudConfig.get();
         int base = collapsed ? 24 : 76; // 3 actions (Mod Info removed)
-        if ("COMPACT".equals(config.sidebarSize)) return base - 6;
-        if ("LARGE".equals(config.sidebarSize)) return base + 8;
-        return base;
+        return Math.max(20, (int) Math.round(base * config.layoutScale));
     }
 
     public static void render(DrawContext context, float tickDelta) {
@@ -145,16 +141,19 @@ public class HudOverlayRenderer {
         drawOutline(context, x, y, w, h, BORDER_COLOR);
 
         // Top Chevron button area (highlighted box)
-        context.fill(x + 1, y + 1, x + w - 1, y + 19, 0x551E293B);
-        IconRenderer.drawChevron(context, x + (w / 2) - 3, y + 6, collapsed, 0xFFE2E8F0);
+        int topH = Math.min(20, Math.max(16, (int) Math.round(20 * config.layoutScale)));
+        context.fill(x + 1, y + 1, x + w - 1, y + topH - 1, 0x551E293B);
+        IconRenderer.drawChevron(context, x + (w / 2) - 3, y + (topH / 2) - 4, collapsed, 0xFFE2E8F0);
 
         if (!collapsed) {
+            int actionAreaH = h - topH;
+            int slotH = actionAreaH / 3;
             // Action 1: Settings (Gear)
-            IconRenderer.drawGear(context, x + (w / 2) - 5, y + 25, 0xFF94A3B8);
+            IconRenderer.drawGear(context, x + (w / 2) - 5, y + topH + (slotH - 10) / 2, 0xFF94A3B8);
             // Action 2: Players (Users)
-            IconRenderer.drawUsers(context, x + (w / 2) - 6, y + 43, 0xFF94A3B8);
+            IconRenderer.drawUsers(context, x + (w / 2) - 6, y + topH + slotH + (slotH - 10) / 2, 0xFF94A3B8);
             // Action 3: Map
-            IconRenderer.drawMap(context, x + (w / 2) - 5, y + 61, 0xFF94A3B8);
+            IconRenderer.drawMap(context, x + (w / 2) - 5, y + topH + slotH * 2 + (slotH - 10) / 2, 0xFF94A3B8);
         }
     }
 
@@ -165,28 +164,38 @@ public class HudOverlayRenderer {
         int x = getLeftPanelX();
         int y = getLeftPanelY();
         int w = getLeftPanelW(collapsed);
+        int h = getLeftPanelH(collapsed);
 
         MinecraftClient client = MinecraftClient.getInstance();
         TextRenderer tr = client.textRenderer;
 
+        int topH = Math.min(20, Math.max(16, (int) Math.round(20 * config.layoutScale)));
+
         // Check hover on Chevron button
-        if (mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + 20) {
-            context.fill(x + 1, y + 1, x + w - 1, y + 20, HOVER_COLOR);
+        if (mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + topH) {
+            context.fill(x + 1, y + 1, x + w - 1, y + topH - 1, HOVER_COLOR);
             String tip = collapsed ? "Expand (C)" : "Collapse (C)";
-            context.drawTextWithShadow(tr, tip, x + w + 6, y + 6, 0xFFFFFFFF);
+            context.drawTextWithShadow(tr, tip, x + w + 6, y + (topH / 2) - 4, 0xFFFFFFFF);
             return;
         }
 
         if (!collapsed && mouseX >= x && mouseX <= x + w) {
-            if (mouseY >= y + 21 && mouseY < y + 39) {
-                context.fill(x + 1, y + 21, x + w - 1, y + 39, HOVER_COLOR);
-                context.drawTextWithShadow(tr, "Settings (O)", x + w + 6, y + 25, 0xFFFFFFFF);
-            } else if (mouseY >= y + 39 && mouseY < y + 57) {
-                context.fill(x + 1, y + 39, x + w - 1, y + 57, HOVER_COLOR);
-                context.drawTextWithShadow(tr, "Players & Ranks", x + w + 6, y + 43, 0xFFFFFFFF);
-            } else if (mouseY >= y + 57 && mouseY <= y + 76) {
-                context.fill(x + 1, y + 57, x + w - 1, y + 76, HOVER_COLOR);
-                context.drawTextWithShadow(tr, "Live World Map", x + w + 6, y + 61, 0xFFFFFFFF);
+            int actionAreaH = h - topH;
+            int slotH = actionAreaH / 3;
+            int slot1Start = y + topH;
+            int slot2Start = y + topH + slotH;
+            int slot3Start = y + topH + slotH * 2;
+            int slot3End = y + h;
+
+            if (mouseY >= slot1Start && mouseY < slot2Start) {
+                context.fill(x + 1, slot1Start + 1, x + w - 1, slot2Start - 1, HOVER_COLOR);
+                context.drawTextWithShadow(tr, "Settings (O)", x + w + 6, slot1Start + (slotH - 8) / 2, 0xFFFFFFFF);
+            } else if (mouseY >= slot2Start && mouseY < slot3Start) {
+                context.fill(x + 1, slot2Start + 1, x + w - 1, slot3Start - 1, HOVER_COLOR);
+                context.drawTextWithShadow(tr, "Players & Ranks", x + w + 6, slot2Start + (slotH - 8) / 2, 0xFFFFFFFF);
+            } else if (mouseY >= slot3Start && mouseY <= slot3End) {
+                context.fill(x + 1, slot3Start + 1, x + w - 1, slot3End - 1, HOVER_COLOR);
+                context.drawTextWithShadow(tr, "Live World Map", x + w + 6, slot3Start + (slotH - 8) / 2, 0xFFFFFFFF);
             }
         }
 
@@ -301,20 +310,28 @@ public class HudOverlayRenderer {
         if (mouseX >= x - 2 && mouseX <= x + w + 4 && mouseY >= y - 2 && mouseY <= y + h + 4) {
             MinecraftClient client = MinecraftClient.getInstance();
 
+            int topH = Math.min(20, Math.max(16, (int) Math.round(20 * config.layoutScale)));
             // Click chevron (< / >)
-            if (mouseY <= y + 21) {
+            if (mouseY <= y + topH) {
                 toggleToolbar();
                 return true;
             }
 
             if (!collapsed) {
-                if (mouseY >= y + 21 && mouseY < y + 39) {
+                int actionAreaH = h - topH;
+                int slotH = actionAreaH / 3;
+                int slot1Start = y + topH;
+                int slot2Start = y + topH + slotH;
+                int slot3Start = y + topH + slotH * 2;
+                int slot3End = y + h;
+
+                if (mouseY >= slot1Start && mouseY < slot2Start) {
                     client.setScreen(new BcasSettingsScreen(client.currentScreen));
                     return true;
-                } else if (mouseY >= y + 39 && mouseY < y + 57) {
+                } else if (mouseY >= slot2Start && mouseY < slot3Start) {
                     client.setScreen(new BcasPlayerScreen(client.currentScreen));
                     return true;
-                } else if (mouseY >= y + 57 && mouseY <= y + 76) {
+                } else if (mouseY >= slot3Start && mouseY <= slot3End + 2) {
                     client.setScreen(new BcasMapScreen(client.currentScreen));
                     return true;
                 }

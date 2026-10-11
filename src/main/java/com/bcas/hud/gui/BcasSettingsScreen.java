@@ -5,6 +5,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.option.KeybindsScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.SliderWidget;
 import net.minecraft.text.Text;
 
 public class BcasSettingsScreen extends Screen {
@@ -92,21 +93,38 @@ public class BcasSettingsScreen extends Screen {
         y += 26;
 
         // --- ROW 4 ---
-        // Left: Sidebar Size (Normal / Compact / Large)
-        this.addDrawableChild(ButtonWidget.builder(
-                Text.literal("Sidebar Size: §e" + config.sidebarSize),
-                btn -> {
-                    if ("NORMAL".equals(config.sidebarSize)) {
-                        config.sidebarSize = "LARGE";
-                    } else if ("LARGE".equals(config.sidebarSize)) {
-                        config.sidebarSize = "COMPACT";
-                    } else {
-                        config.sidebarSize = "NORMAL";
-                    }
-                    btn.setMessage(Text.literal("Sidebar Size: §e" + config.sidebarSize));
-                    HudConfig.save();
+        // Left: Layout Size Slider (Minecraft GUI SliderWidget)
+        double minScale = 0.70;
+        double maxScale = 1.30;
+        double initialVal = Math.max(0.0, Math.min(1.0, (config.layoutScale - minScale) / (maxScale - minScale)));
+        int initialPct = (int) Math.round(config.layoutScale * 100);
+
+        this.addDrawableChild(new SliderWidget(col1X, y, btnW, btnH, Text.literal("Layout Size: §e" + initialPct + "%"), initialVal) {
+            @Override
+            protected void updateMessage() {
+                int pct = getPercent();
+                this.setMessage(Text.literal("Layout Size: §e" + pct + "%"));
+            }
+
+            @Override
+            protected void applyValue() {
+                int pct = getPercent();
+                config.layoutScale = pct / 100.0f;
+                if (pct <= 80) {
+                    config.sidebarSize = "COMPACT";
+                } else if (pct >= 120) {
+                    config.sidebarSize = "LARGE";
+                } else {
+                    config.sidebarSize = "NORMAL";
                 }
-        ).dimensions(col1X, y, btnW, btnH).build());
+                HudConfig.save();
+            }
+
+            private int getPercent() {
+                double scale = minScale + this.value * (maxScale - minScale);
+                return (int) Math.round(scale * 20.0) * 5;
+            }
+        });
 
         // Right: Customize Shortcuts (Opens Keybinds Screen)
         this.addDrawableChild(ButtonWidget.builder(

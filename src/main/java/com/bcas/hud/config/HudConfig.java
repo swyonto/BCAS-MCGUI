@@ -22,7 +22,8 @@ public class HudConfig {
     public boolean hideVanillaStatusBars = true;
     public boolean leftPanelCollapsed = false;
     public boolean sidebarTopCorner = false;
-    public String sidebarSize = "NORMAL"; // "COMPACT", "NORMAL", "LARGE"
+    public String sidebarSize = "NORMAL"; // "COMPACT", "NORMAL", "LARGE" (retained for backward compatibility)
+    public float layoutScale = 1.0f; // 0.70f to 1.30f (70% - 130%)
 
     public String serverName = "BCAS SMP";
     public String rankText = "EXPLORER";
@@ -38,6 +39,18 @@ public class HudConfig {
         if (CONFIG_FILE.exists()) {
             try (FileReader reader = new FileReader(CONFIG_FILE)) {
                 instance = GSON.fromJson(reader, HudConfig.class);
+                if (instance != null) {
+                    // Backward-compat: if layoutScale was not previously set
+                    if (instance.layoutScale <= 0.1f) {
+                        if ("LARGE".equalsIgnoreCase(instance.sidebarSize)) {
+                            instance.layoutScale = 1.25f;
+                        } else if ("COMPACT".equalsIgnoreCase(instance.sidebarSize)) {
+                            instance.layoutScale = 0.75f;
+                        } else {
+                            instance.layoutScale = 1.0f;
+                        }
+                    }
+                }
             } catch (Exception e) {
                 instance = new HudConfig();
             }

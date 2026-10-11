@@ -11,8 +11,8 @@ BCAS SMP custom HUD for Minecraft Java Edition.
 - Visual layout:
   - Background colors: Translucent neutral dark gray (`0x4518181B` / `0x7518181B`) with low opacity and no blue tint.
   - Top-right stats container: Unified single container with reduced row gaps, compact height (~58px), containing FPS, Coordinates, Online Players, and Ping.
-  - Left-side collapsible tool panel: 3 tools (Settings, Players & Ranks, Live Map) with dynamic scaling (`COMPACT`, `NORMAL`, `LARGE`) and position toggle (`Center-Left` vs `Top-Left Corner`).
-  - Settings Screen: Clean 2-column button layout with direct link to Minecraft Keybinds/Shortcuts.
+  - Left-side collapsible tool panel: 3 tools (Settings, Players & Ranks, Live Map) with dynamic scaling via native Minecraft slider (`70%` to `130%`) and position toggle (`Center-Left` vs `Top-Left Corner`).
+  - Settings Screen: Clean 2-column layout with native Minecraft `SliderWidget` for Layout Size (snapping in 5% increments) and direct link to Minecraft Keybinds/Shortcuts.
   - Map Screen: Zoom levels (0.5x, 1.0x, 2.0x), zoom buttons (`+` / `-`), mouse wheel scroll zoom, keyboard zoom, buttons rendered on top of card.
   - Players Screen: Two-pane browser with UP/DOWN arrow navigation, mouse hover selection, ENTER key to copy name, and live user info detail card.
   - Bottom status bar: Health, Hunger (drumstick icon), and Rank square badge aligned to 178px above hotbar.
